@@ -29,8 +29,9 @@ export const registerUser = async (req, res) => {
     await newUser.save();
 
     return sendSuccess(res, {
+      code: "OK",
       result: true,
-      message: `Welcome onboard ${username} (${role})`,
+      message: "OK",
       statusCode: 201,
       resourceId: newUser._id,
     });
@@ -73,7 +74,6 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // SUCCESS RESPONSE FOR LOGIN
     return sendSuccess(res, {
       result: {
         username: existingUser.username,
