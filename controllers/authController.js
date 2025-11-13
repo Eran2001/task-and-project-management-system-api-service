@@ -1,30 +1,45 @@
 import bcrypt from "bcrypt";
 
+import { sendSuccess, sendError } from "../utils/response.js";
 import User from "../models/User.js";
 
 export const registerUser = async (req, res) => {
   const { username, password, role } = req.body;
 
   if (!username || !password || !role) {
-    return res
-      .status(400)
-      .json({ message: "Username, password, and role are required" });
+    return sendError(res, {
+      code: "BAD_REQUEST",
+      message: "Username, password, and role are required",
+      statusCode: 400,
+    });
   }
 
   try {
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ message: "Username already exists" });
+      return sendError(res, {
+        code: "USER_EXISTS",
+        message: "Username already exists",
+        statusCode: 400,
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword, role });
     await newUser.save();
 
-    res.status(201).json({ message: `Welcome onboard ${username} (${role})` });
+    return sendSuccess(res, {
+      result: true,
+      message: `Welcome onboard ${username} (${role})`,
+      statusCode: 201,
+      resourceId: newUser._id,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, {
+      message: "Server error",
+      statusCode: 500,
+    });
   }
 };
 
@@ -32,31 +47,47 @@ export const loginUser = async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res
-      .status(400)
-      .json({ message: "Username and password are required" });
+    return sendError(res, {
+      code: "BAD_REQUEST",
+      message: "Username and password are required",
+      statusCode: 400,
+    });
   }
 
   try {
     const existingUser = await User.findOne({ username });
     if (!existingUser) {
-      return res.status(404).json({ message: "User not found" });
+      return sendError(res, {
+        code: "NOT_FOUND",
+        message: "User not found",
+        statusCode: 404,
+      });
     }
 
     const isMatch = await bcrypt.compare(password, existingUser.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password" });
+      return sendError(res, {
+        code: "UNAUTHORIZED",
+        message: "Invalid password",
+        statusCode: 401,
+      });
     }
 
-    res.status(200).json({
-      message: `Welcome back ${existingUser.username} (${existingUser.role})`,
-      user: {
+    // SUCCESS RESPONSE FOR LOGIN
+    return sendSuccess(res, {
+      result: {
         username: existingUser.username,
         role: existingUser.role,
       },
+      message: `Welcome back ${existingUser.username} (${existingUser.role})`,
+      statusCode: 200,
+      resourceId: existingUser._id,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, {
+      message: "Server error",
+      statusCode: 500,
+    });
   }
 };
