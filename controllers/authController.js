@@ -30,7 +30,9 @@ export const registerUser = async (req, res) => {
 
     return sendSuccess(res, {
       code: "OK",
-      result: true,
+      data: {
+        result: true,
+      },
       message: "OK",
       statusCode: 201,
       resourceId: newUser._id,
@@ -76,9 +78,8 @@ export const loginUser = async (req, res) => {
 
     return sendSuccess(res, {
       code: "OK",
-      result: {
-        username: existingUser.username,
-        role: existingUser.role,
+      data: {
+        result: true,
       },
       message: "OK",
       statusCode: 200,

@@ -13,19 +13,11 @@ export const sendSuccess = (
 ) => {
   const response = {
     code,
+    data,
     message,
     requestId: uuidv4(),
     resourceId: resourceId || uuidv4(),
   };
-
-  if (result !== null) {
-    response.result = result;
-  }
-
-  if (data !== null) {
-    response.data = { result: data };
-  }
-
   return res.status(statusCode).json(response);
 };
 
