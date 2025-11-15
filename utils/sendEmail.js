@@ -1,29 +1,31 @@
-// @utils/sendEmail.js
 import nodemailer from "nodemailer";
 
 const sendEmail = async (to, subject, text) => {
   try {
-    // Create a transporter using environment variables
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+      port: Number(process.env.SMTP_PORT),
+      secure: process.env.SMTP_SECURE === "true",
       auth: {
-        user: process.env.SMTP_USER, // your email
-        pass: process.env.SMTP_PASS, // your email password or app password
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
     });
 
-    // Email options
-    const mailOptions = {
-      from: `"Admin Panel" <${process.env.SMTP_USER}>`, // sender address
-      to, // list of receivers
-      subject, // Subject line
-      text, // plain text body
-    };
+    console.log("SMTP Config:", {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE,
+      user: process.env.SMTP_USER,
+    });
 
-    // Send email
-    await transporter.sendMail(mailOptions);
+    await transporter.sendMail({
+      from: `"Admin Panel" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      text,
+    });
+
     console.log(`Email sent to ${to}`);
   } catch (error) {
     console.error("Error sending email:", error);
