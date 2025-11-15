@@ -1,13 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-
 import "module-alias/register.js";
 
 import connectDB from "@configs/db.js";
 
-import userRegisterRoutes from "@routes/auth/register/userRegisterRoutes.js";
-import userLoginRoutes from "@routes/auth/login/userLogin.js";
+import adminRegister from "@routes/auth/register/adminRegister.js";
+import adminLogin from "@routes/auth/login/adminLogin.js";
 
 dotenv.config();
 
@@ -19,11 +18,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// user registration
-app.use("/api/v1", userRegisterRoutes);
+// admin registration
+app.use("/api/v1", adminRegister);
 
-// user login
-app.use("/api/v1", userLoginRoutes);
+// admin login
+app.use("/api/v1", adminLogin);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
