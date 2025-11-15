@@ -1,9 +1,13 @@
 import express from "express";
 
-import { registerAdmin } from "@controllers/adminAuthController.js";
+import {
+  registerAdmin,
+  verifyAdmin,
+} from "@controllers/adminAuthController.js";
 
-const userRegisterRoutes = express.Router();
+const router = express.Router();
 
-userRegisterRoutes.post("/auth/register", registerAdmin);
+router.post("/auth/register", registerAdmin);
+router.post("/auth/verify", verifyAdmin);
 
-export default userRegisterRoutes;
+export default router;

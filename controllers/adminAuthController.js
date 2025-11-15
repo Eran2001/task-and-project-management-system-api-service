@@ -1,12 +1,12 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
-import User from "@models/User.js";
+import Admin from "@models/adminModel.js";
 import sendEmail from "@utils/sendEmail.js";
 import { sendSuccess, sendError } from "@utils/response.js";
 
-// here is the controller for register user
-export const adminRegister = async (req, res) => {
+export const registerAdmin = async (req, res) => {
   const {
     username,
     email,
@@ -26,17 +26,17 @@ export const adminRegister = async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin)
       return sendError(res, {
         code: "USER_EXISTS",
-        message: "User already exists",
+        message: "Admin already exists",
         statusCode: 400,
       });
 
     const verificationToken = crypto.randomBytes(32).toString("hex");
 
-    const newUser = new User({
+    const newAdmin = new Admin({
       username,
       email,
       role,
@@ -47,9 +47,9 @@ export const adminRegister = async (req, res) => {
       verificationToken,
       isVerified: false,
     });
-    await newUser.save();
 
-    // Send verification email
+    await newAdmin.save();
+
     const verificationLink = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
     await sendEmail(
       email,
@@ -63,6 +63,7 @@ export const adminRegister = async (req, res) => {
       statusCode: 201,
     });
   } catch (err) {
+    console.error(err);
     return sendError(res, {
       code: "SERVER_ERROR",
       message: "Server error",
@@ -71,43 +72,76 @@ export const adminRegister = async (req, res) => {
   }
 };
 
-// here is the controller for login user
-export const adminLogin = async (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return sendError(res, {
-      code: "BAD_REQUEST",
-      message: "Username and password are required",
-      statusCode: 400,
-    });
-  }
+export const verifyAdmin = async (req, res) => {
+  const { token, password } = req.body;
 
   try {
-    const existingUser = await User.findOne({ username });
-    if (!existingUser) {
+    const admin = await Admin.findOne({ verificationToken: token });
+    if (!admin)
+      return sendError(res, {
+        code: "INVALID_TOKEN",
+        message: "Invalid or expired token",
+        statusCode: 400,
+      });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    admin.password = hashedPassword;
+    admin.isVerified = true;
+    admin.verificationToken = null;
+
+    await admin.save();
+
+    return sendSuccess(res, {
+      code: "OK",
+      data: { message: "Password set successfully" },
+      statusCode: 200,
+    });
+  } catch (err) {
+    console.error(err);
+    return sendError(res, {
+      code: "SERVER_ERROR",
+      message: "Server error",
+      statusCode: 500,
+    });
+  }
+};
+
+export const adminLogin = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password)
+    return sendError(res, {
+      code: "BAD_REQUEST",
+      message: "Email and password required",
+      statusCode: 400,
+    });
+
+  try {
+    const admin = await Admin.findOne({ email });
+    if (!admin)
       return sendError(res, {
         code: "NOT_FOUND",
-        message: "User not found",
+        message: "Admin not found",
         statusCode: 404,
       });
-    }
 
-    const isMatch = await bcrypt.compare(password, existingUser.password);
-    if (!isMatch) {
+    if (!admin.isVerified)
+      return sendError(res, {
+        code: "NOT_VERIFIED",
+        message: "Please verify your email first",
+        statusCode: 403,
+      });
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch)
       return sendError(res, {
         code: "UNAUTHORIZED",
         message: "Invalid password",
         statusCode: 401,
       });
-    }
 
     const token = jwt.sign(
-      {
-        userId: existingUser._id,
-        username: existingUser.username,
-        role: existingUser.role,
-      },
+      { userId: admin._id, email: admin.email, role: admin.role },
       process.env.JWT_SECRET_KEY,
       { expiresIn: "7d" }
     );
@@ -118,18 +152,18 @@ export const adminLogin = async (req, res) => {
         result: {
           token,
           user: {
-            resourceId: existingUser._id,
-            userName: existingUser.username,
-            userRole: existingUser.role,
+            resourceId: admin._id,
+            userName: admin.username,
+            userRole: admin.role,
           },
         },
       },
-      message: "OK",
       statusCode: 200,
-      resourceId: existingUser._id,
     });
   } catch (err) {
+    console.error(err);
     return sendError(res, {
+      code: "SERVER_ERROR",
       message: "Server error",
       statusCode: 500,
     });
