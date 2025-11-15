@@ -5,8 +5,8 @@ import "module-alias/register.js";
 
 import connectDB from "@configs/db.js";
 
-import adminRegister from "@routes/auth/register/adminRegister.js";
-import adminLogin from "@routes/auth/login/adminLogin.js";
+import adminRegister from "@routes/auth/adminRegister.js";
+import adminLogin from "@routes/auth/adminLogin.js";
 
 dotenv.config();
 
