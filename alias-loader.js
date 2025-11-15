@@ -11,6 +11,7 @@ export function resolve(specifier, context, nextResolve) {
     "@controllers": "controllers",
     "@utils": "utils",
     "@models": "models",
+    "@middlewares": "middlewares",
   };
 
   for (const alias in aliases) {
