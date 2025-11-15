@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 import { sendSuccess, sendError } from "@utils/response.js";
 import User from "@models/User.js";
@@ -29,11 +30,25 @@ export const registerUser = async (req, res) => {
     const newUser = new User({ username, password: hashedPassword, role });
     await newUser.save();
 
+    const token = jwt.sign(
+      { userId: newUser._id, username: newUser.username, role: newUser.role },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "7d" }
+    );
+
     return sendSuccess(res, {
       code: "OK",
       data: {
-        result: true,
+        result: {
+          token,
+          user: {
+            resourceId: newUser._id,
+            userName: newUser.username,
+            userRole: newUser.role,
+          },
+        },
       },
+      token,
       message: "OK",
       statusCode: 201,
       resourceId: newUser._id,
@@ -77,10 +92,27 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    const token = jwt.sign(
+      {
+        userId: existingUser._id,
+        username: existingUser.username,
+        role: existingUser.role,
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "7d" }
+    );
+
     return sendSuccess(res, {
       code: "OK",
       data: {
-        result: true,
+        result: {
+          token,
+          user: {
+            resourceId: existingUser._id,
+            userName: existingUser.username,
+            userRole: existingUser.role,
+          },
+        },
       },
       message: "OK",
       statusCode: 200,
